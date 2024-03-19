@@ -6,6 +6,7 @@ use {
             CloseAccount, close_account,
             Approve, approve,
             SetAuthority, set_authority,
+            Burn, burn,
         },
     },
     spl_token_2022,
@@ -44,6 +45,19 @@ pub mod solana_lab_cpi_guard {
             ctx.accounts.set_authority_ctx(),
             spl_token_2022::instruction::AuthorityType::CloseAccount,
             Some(ctx.accounts.new_authority.key()),
+        )?;
+
+        Ok(())
+    }
+
+    pub fn unauthorized_burn(ctx: Context<BurnAccounts>, amount: u64) -> Result<()> {
+        msg!("Invoked Burn");
+
+        msg!("Burning {} tokens from address: {}", amount, ctx.accounts.token_account.key());
+
+        burn(
+            ctx.accounts.burn_ctx(),
+            amount
         )?;
 
         Ok(())
@@ -99,6 +113,24 @@ pub struct SetAuthorityAccount<'info> {
     pub token_program: Interface<'info, token_interface::TokenInterface>,
 }
 
+#[derive(Accounts)]
+pub struct BurnAccounts<'info> {
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    #[account(
+        mut,
+        token::token_program = token_program,
+        token::authority = authority
+    )]
+    pub token_account: InterfaceAccount<'info, token_interface::TokenAccount>,
+    #[account(
+        mut,
+        mint::token_program = token_program
+    )]
+    pub token_mint: InterfaceAccount<'info, token_interface::Mint>,
+    pub token_program: Interface<'info, token_interface::TokenInterface>
+}
+
 impl<'info> MaliciousCloseAccount <'info> {
     // close_account for Token2022
     pub fn close_account_ctx(&self) -> CpiContext<'_, '_, '_, 'info, CloseAccount<'info>> {
@@ -136,4 +168,17 @@ impl <'info> SetAuthorityAccount <'info> {
 
         CpiContext::new(cpi_program, cpi_accounts)
     } 
+}
+
+impl <'info> BurnAccounts <'info> {
+    pub fn burn_ctx(&self) -> CpiContext<'_, '_, '_, 'info, Burn<'info>> {
+        let cpi_program = self.token_program.to_account_info();
+        let cpi_accounts = Burn {
+            mint: self.token_mint.to_account_info(),
+            from: self.token_account.to_account_info(),
+            authority: self.authority.to_account_info()
+        };
+
+        CpiContext::new(cpi_program, cpi_accounts)
+    }
 }
