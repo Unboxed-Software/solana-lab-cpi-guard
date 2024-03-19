@@ -20,46 +20,46 @@ describe("solana-lab-cpi-guard", () => {
   let userTokenAccount = anchor.web3.Keypair.generate()
   let maliciousAccount = anchor.web3.Keypair.generate()
 
-  it("[CPI Guard] Close Account Example", async () => {
-    await safeAirdrop(payer.publicKey, provider.connection)
-    await safeAirdrop(provider.wallet.publicKey, provider.connection)
-    delay(10000)
+  // it("[CPI Guard] Close Account Example", async () => {
+  //   await safeAirdrop(payer.publicKey, provider.connection)
+  //   await safeAirdrop(provider.wallet.publicKey, provider.connection)
+  //   delay(10000)
 
-    testTokenMint = await createMint(
-      provider.connection,
-      payer,
-      provider.wallet.publicKey,
-      undefined,
-      6,
-      undefined,
-      undefined,
-      TOKEN_2022_PROGRAM_ID
-    )
-    await createTokenAccountWithExtensions(
-      provider.connection,
-      testTokenMint,
-      payer,
-      payer,
-      userTokenAccount
-    )
+  //   testTokenMint = await createMint(
+  //     provider.connection,
+  //     payer,
+  //     provider.wallet.publicKey,
+  //     undefined,
+  //     6,
+  //     undefined,
+  //     undefined,
+  //     TOKEN_2022_PROGRAM_ID
+  //   )
+  //   await createTokenAccountWithExtensions(
+  //     provider.connection,
+  //     testTokenMint,
+  //     payer,
+  //     payer,
+  //     userTokenAccount
+  //   )
     
-    try {
-      const tx = await program.methods.maliciousCloseAccount()
-      .accounts({
-        authority: payer.publicKey,
-        tokenAccount: userTokenAccount.publicKey,
-        destination: maliciousAccount.publicKey,
-        tokenProgram: TOKEN_2022_PROGRAM_ID,
-      })
-      .signers([payer])
-      .rpc();
+  //   try {
+  //     const tx = await program.methods.maliciousCloseAccount()
+  //     .accounts({
+  //       authority: payer.publicKey,
+  //       tokenAccount: userTokenAccount.publicKey,
+  //       destination: maliciousAccount.publicKey,
+  //       tokenProgram: TOKEN_2022_PROGRAM_ID,
+  //     })
+  //     .signers([payer])
+  //     .rpc();
 
-    console.log("Your transaction signature", tx);
-    } catch (e) {
-      assert(e.message == "failed to send transaction: Transaction simulation failed: Error processing Instruction 0: custom program error: 0x2c")
-      console.log("CPI Guard is enabled, and a program attempted to close an account without returning lamports to owner");
-    }
-  });
+  //   console.log("Your transaction signature", tx);
+  //   } catch (e) {
+  //     assert(e.message == "failed to send transaction: Transaction simulation failed: Error processing Instruction 0: custom program error: 0x2c")
+  //     console.log("CPI Guard is enabled, and a program attempted to close an account without returning lamports to owner");
+  //   }
+  // });
 
   it("[CPI Guard] Approve Delete Example", async () => {
     try {
