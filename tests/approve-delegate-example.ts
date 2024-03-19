@@ -1,13 +1,13 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { SolanaLabCpiGuard } from "../target/types/solana_lab_cpi_guard";
-import { PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from '@solana/web3.js'
+import { PublicKey } from '@solana/web3.js'
 import { mintTo, createAccount, createMint, getAssociatedTokenAddress, createAssociatedTokenAccount, getAccount, TOKEN_2022_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from '@solana/spl-token'
 import { createTokenAccount, createTokenAccountWithExtensions } from "./utils/token-helper";
 import { safeAirdrop, delay } from "./utils/utils";
 import { assert } from "chai"
 
-describe("close-account-test", () => {
+describe("approve-delegate-test", () => {
     // Configure the client to use the local cluster.
     anchor.setProvider(anchor.AnchorProvider.env());
 
@@ -20,7 +20,7 @@ describe("close-account-test", () => {
     let userTokenAccount = anchor.web3.Keypair.generate()
     let maliciousAccount = anchor.web3.Keypair.generate()
 
-    it("[CPI Guard] Close Account Example", async () => {
+    it("[CPI Guard] Approve Delegate Example", async () => {
         await safeAirdrop(payer.publicKey, provider.connection)
         await safeAirdrop(provider.wallet.publicKey, provider.connection)
         delay(10000)
@@ -42,39 +42,26 @@ describe("close-account-test", () => {
             payer,
             userTokenAccount
         )
-        
         try {
-        const tx = await program.methods.maliciousCloseAccount()
-        .accounts({
+            const tx = await program.methods.prohibitedApproveAccount(new anchor.BN(1000))
+            .accounts({
             authority: payer.publicKey,
             tokenAccount: userTokenAccount.publicKey,
-            destination: maliciousAccount.publicKey,
+            delegate: maliciousAccount.publicKey,
             tokenProgram: TOKEN_2022_PROGRAM_ID,
-        })
-        .signers([payer])
-        .rpc();
+            })
+            .signers([payer])
+            .rpc();
 
         console.log("Your transaction signature", tx);
         } catch (e) {
-        assert(e.message == "failed to send transaction: Transaction simulation failed: Error processing Instruction 0: custom program error: 0x2c")
-        console.log("CPI Guard is enabled, and a program attempted to close an account without returning lamports to owner");
+            assert(e.message == "failed to send transaction: Transaction simulation failed: Error processing Instruction 0: custom program error: 0x2d")
+            console.log("CPI Guard is enabled, and a program attempted to approve a delegate");
         }
-    });
+    })
 
-    it("Close Account without CPI Guard", async () => {
+    it("Approve Delegate Example", async () => {
         let nonCpiGuardTokenAccount = anchor.web3.Keypair.generate()
-        
-        testTokenMint = await createMint(
-            provider.connection,
-            payer,
-            provider.wallet.publicKey,
-            undefined,
-            6,
-            undefined,
-            undefined,
-            TOKEN_2022_PROGRAM_ID
-        )
-        
         await createTokenAccount(
             provider.connection,
             testTokenMint,
@@ -83,14 +70,14 @@ describe("close-account-test", () => {
             nonCpiGuardTokenAccount
         )
         
-        const tx = await program.methods.maliciousCloseAccount()
-            .accounts({
-            authority: payer.publicKey,
-            tokenAccount: nonCpiGuardTokenAccount.publicKey,
-            destination: maliciousAccount.publicKey,
-            tokenProgram: TOKEN_2022_PROGRAM_ID,
-            })
-            .signers([payer])
-            .rpc();
-        });
+        const tx = await program.methods.prohibitedApproveAccount(new anchor.BN(1000))
+        .accounts({
+        authority: payer.publicKey,
+        tokenAccount: nonCpiGuardTokenAccount.publicKey,
+        delegate: maliciousAccount.publicKey,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
+        .signers([payer])
+        .rpc();
+    })
 })
