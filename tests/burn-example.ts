@@ -43,7 +43,7 @@ describe("burn-delegate-test", () => {
             userTokenAccount
         )
 
-        const mintToTx = await mintTo(
+        await mintTo(
             provider.connection,
             payer,
             testTokenMint,
@@ -55,7 +55,7 @@ describe("burn-delegate-test", () => {
             TOKEN_2022_PROGRAM_ID
         )
 
-        const approveTx = await approve(
+        await approve(
             provider.connection,
             payer,
             userTokenAccount.publicKey,
@@ -84,5 +84,52 @@ describe("burn-delegate-test", () => {
             assert(e.message == "failed to send transaction: Transaction simulation failed: Error processing Instruction 0: custom program error: 0x2b")
             console.log("CPI Guard is enabled, and a program attempted to burn user funds without using a delegate.");
         }
+    })
+
+    it("Burn without Delegate Signature Example", async () => {
+        let nonCpiGuardTokenAccount = anchor.web3.Keypair.generate()
+        await createTokenAccount(
+            provider.connection,
+            testTokenMint,
+            payer,
+            payer,
+            nonCpiGuardTokenAccount
+        )
+
+        await mintTo(
+            provider.connection,
+            payer,
+            testTokenMint,
+            nonCpiGuardTokenAccount.publicKey,
+            payer,
+            1000,
+            undefined,
+            undefined,
+            TOKEN_2022_PROGRAM_ID
+        )
+
+
+        await approve(
+            provider.connection,
+            payer,
+            nonCpiGuardTokenAccount.publicKey,
+            delegate.publicKey,
+            payer,
+            500,
+            undefined,
+            undefined,
+            TOKEN_2022_PROGRAM_ID
+        )
+
+        const tx = await program.methods.unauthorizedBurn(new anchor.BN(500))
+        .accounts({
+            // payer is not the delegate
+            authority: payer.publicKey,
+            tokenAccount: nonCpiGuardTokenAccount.publicKey,
+            tokenMint: testTokenMint,
+            tokenProgram: TOKEN_2022_PROGRAM_ID,
+        })
+        .signers([payer])
+        .rpc();
     })
 })
