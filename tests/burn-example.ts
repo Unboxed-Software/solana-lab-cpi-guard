@@ -85,4 +85,51 @@ describe("burn-delegate-test", () => {
             console.log("CPI Guard is enabled, and a program attempted to burn user funds without using a delegate.");
         }
     })
+
+    it("Burn without Delegate Signature Example", async () => {
+        let nonCpiGuardTokenAccount = anchor.web3.Keypair.generate()
+        await createTokenAccount(
+            provider.connection,
+            testTokenMint,
+            payer,
+            payer,
+            nonCpiGuardTokenAccount
+        )
+
+        await mintTo(
+            provider.connection,
+            payer,
+            testTokenMint,
+            nonCpiGuardTokenAccount.publicKey,
+            payer,
+            1000,
+            undefined,
+            undefined,
+            TOKEN_2022_PROGRAM_ID
+        )
+
+
+        await approve(
+            provider.connection,
+            payer,
+            nonCpiGuardTokenAccount.publicKey,
+            delegate.publicKey,
+            payer,
+            500,
+            undefined,
+            undefined,
+            TOKEN_2022_PROGRAM_ID
+        )
+
+        await program.methods.unauthorizedBurn(new anchor.BN(500))
+            .accounts({
+                // payer is not the delegate
+                authority: payer.publicKey,
+                tokenAccount: nonCpiGuardTokenAccount.publicKey,
+                tokenMint: testTokenMint,
+                tokenProgram: TOKEN_2022_PROGRAM_ID,
+            })
+            .signers([payer])
+            .rpc();
+    })
 })
