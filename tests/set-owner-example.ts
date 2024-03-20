@@ -18,7 +18,7 @@ describe("set-owner-test", () => {
     const payer = anchor.web3.Keypair.generate()
     let testTokenMint: PublicKey = null
     let userTokenAccount = anchor.web3.Keypair.generate()
-    let newAuthority = anchor.web3.Keypair.generate()
+    let newOwner = anchor.web3.Keypair.generate()
 
     it("[CPI Guard] Set Authority without CPI on CPI Guarded Account", async () => {
         await safeAirdrop(payer.publicKey, provider.connection)
@@ -49,7 +49,7 @@ describe("set-owner-test", () => {
                 userTokenAccount.publicKey,
                 payer,
                 AuthorityType.AccountOwner,
-                newAuthority.publicKey,
+                newOwner.publicKey,
                 undefined,
                 undefined,
                 TOKEN_2022_PROGRAM_ID
@@ -76,10 +76,49 @@ describe("set-owner-test", () => {
             nonCpiGuardTokenAccount.publicKey,
             payer,
             AuthorityType.AccountOwner,
-            newAuthority.publicKey,
+            newOwner.publicKey,
             undefined,
             undefined,
             TOKEN_2022_PROGRAM_ID
         )
+    })
+
+    it("[CPI Guard] Set Authority via CPI on CPI Guarded Account", async () => {
+        try {
+            await program.methods.setOwner()
+            .accounts({
+                authority: payer.publicKey,
+                tokenAccount: userTokenAccount.publicKey,
+                newOwner: newOwner.publicKey,
+                tokenProgram: TOKEN_2022_PROGRAM_ID,
+            })
+            .signers([payer])
+            .rpc();
+
+        } catch (e) {
+            assert(e.message == "failed to send transaction: Transaction simulation failed: Error processing Instruction 0: custom program error: 0x2e")
+            console.log("CPI Guard is enabled, and a program attempted to add or change an authority.")
+        }
+    })
+
+    it("Set Authority via CPI on Non-CPI Guarded Account", async () => {
+        let nonCpiGuardTokenAccount = anchor.web3.Keypair.generate()
+        await createTokenAccount(
+            provider.connection,
+            testTokenMint,
+            payer,
+            payer,
+            nonCpiGuardTokenAccount
+        )
+
+        await program.methods.setOwner()
+            .accounts({
+                authority: payer.publicKey,
+                tokenAccount: nonCpiGuardTokenAccount.publicKey,
+                newOwner: newOwner.publicKey,
+                tokenProgram: TOKEN_2022_PROGRAM_ID,
+            })
+            .signers([payer])
+            .rpc();
     })
 })

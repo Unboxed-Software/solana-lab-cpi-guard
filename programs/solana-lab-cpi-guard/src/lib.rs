@@ -62,6 +62,21 @@ pub mod solana_lab_cpi_guard {
 
         Ok(())
     }
+
+    pub fn set_owner(ctx: Context<SetOwnerAccounts>) -> Result<()> {
+
+        msg!("Invoked SetOwner");
+
+        msg!("Setting owner of token account: {} to address: {}", ctx.accounts.token_account.key(), ctx.accounts.new_owner.key());
+
+        set_authority(
+            ctx.accounts.set_owner_ctx(),
+            spl_token_2022::instruction::AuthorityType::AccountOwner,
+            Some(ctx.accounts.new_owner.key()),
+        )?;
+
+        Ok(())
+    }
 }
 
 #[derive(Accounts)]
@@ -131,6 +146,22 @@ pub struct BurnAccounts<'info> {
     pub token_program: Interface<'info, token_interface::TokenInterface>
 }
 
+#[derive(Accounts)]
+pub struct SetOwnerAccounts<'info> {
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    #[account(
+        mut,
+        token::token_program = token_program,
+        token::authority = authority
+    )]
+    pub token_account: InterfaceAccount<'info, token_interface::TokenAccount>,
+    /// CHECK: delegat to approve
+    #[account(mut)]
+    pub new_owner: AccountInfo<'info>,
+    pub token_program: Interface<'info, token_interface::TokenInterface>,
+}
+
 impl<'info> MaliciousCloseAccount <'info> {
     // close_account for Token2022
     pub fn close_account_ctx(&self) -> CpiContext<'_, '_, '_, 'info, CloseAccount<'info>> {
@@ -181,4 +212,16 @@ impl <'info> BurnAccounts <'info> {
 
         CpiContext::new(cpi_program, cpi_accounts)
     }
+}
+
+impl <'info> SetOwnerAccounts <'info> {
+    pub fn set_owner_ctx(&self) -> CpiContext<'_, '_, '_, 'info, SetAuthority<'info>> {
+        let cpi_program = self.token_program.to_account_info();
+        let cpi_accounts = SetAuthority {
+            current_authority: self.authority.to_account_info(),
+            account_or_mint: self.token_account.to_account_info(),
+        };
+
+        CpiContext::new(cpi_program, cpi_accounts)
+    } 
 }
