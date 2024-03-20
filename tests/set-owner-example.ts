@@ -59,4 +59,27 @@ describe("set-owner-test", () => {
             console.log("Account ownership cannot be changed while CPI Guard is enabled.")
         }
     })
+
+    it("Set Authority without CPI on Non-CPI Guarded Account", async () => {
+        let nonCpiGuardTokenAccount = anchor.web3.Keypair.generate()
+        await createTokenAccount(
+            provider.connection,
+            testTokenMint,
+            payer,
+            payer,
+            nonCpiGuardTokenAccount
+        )
+
+        await setAuthority(
+            provider.connection,
+            payer,
+            nonCpiGuardTokenAccount.publicKey,
+            payer,
+            AuthorityType.AccountOwner,
+            newAuthority.publicKey,
+            undefined,
+            undefined,
+            TOKEN_2022_PROGRAM_ID
+        )
+    })
 })
