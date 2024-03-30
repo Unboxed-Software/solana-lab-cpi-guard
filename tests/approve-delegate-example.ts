@@ -2,7 +2,7 @@ import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { SolanaLabCpiGuard } from "../target/types/solana_lab_cpi_guard";
 import { PublicKey } from '@solana/web3.js'
-import { mintTo, createAccount, createMint, getAssociatedTokenAddress, createAssociatedTokenAccount, getAccount, TOKEN_2022_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from '@solana/spl-token'
+import { disableCpiGuard, createMint, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token'
 import { createTokenAccount, createTokenAccountWithExtensions } from "./utils/token-helper";
 import { safeAirdrop, delay } from "./utils/utils";
 import { assert } from "chai"
@@ -43,17 +43,15 @@ describe("approve-delegate-test", () => {
             userTokenAccount
         )
         try {
-            const tx = await program.methods.prohibitedApproveAccount(new anchor.BN(1000))
-            .accounts({
-            authority: payer.publicKey,
-            tokenAccount: userTokenAccount.publicKey,
-            delegate: maliciousAccount.publicKey,
-            tokenProgram: TOKEN_2022_PROGRAM_ID,
-            })
-            .signers([payer])
-            .rpc();
-
-        console.log("Your transaction signature", tx);
+            await program.methods.prohibitedApproveAccount(new anchor.BN(1000))
+                .accounts({
+                    authority: payer.publicKey,
+                    tokenAccount: userTokenAccount.publicKey,
+                    delegate: maliciousAccount.publicKey,
+                    tokenProgram: TOKEN_2022_PROGRAM_ID,
+                })
+                .signers([payer])
+                .rpc();
         } catch (e) {
             assert(e.message == "failed to send transaction: Transaction simulation failed: Error processing Instruction 0: custom program error: 0x2d")
             console.log("CPI Guard is enabled, and a program attempted to approve a delegate");
@@ -61,23 +59,24 @@ describe("approve-delegate-test", () => {
     })
 
     it("Approve Delegate Example", async () => {
-        let nonCpiGuardTokenAccount = anchor.web3.Keypair.generate()
-        await createTokenAccount(
+        await disableCpiGuard(
             provider.connection,
-            testTokenMint,
             payer,
+            userTokenAccount.publicKey,
             payer,
-            nonCpiGuardTokenAccount
+            [],
+            undefined,
+            TOKEN_2022_PROGRAM_ID
         )
         
-        const tx = await program.methods.prohibitedApproveAccount(new anchor.BN(1000))
-        .accounts({
-        authority: payer.publicKey,
-        tokenAccount: nonCpiGuardTokenAccount.publicKey,
-        delegate: maliciousAccount.publicKey,
-        tokenProgram: TOKEN_2022_PROGRAM_ID,
-        })
-        .signers([payer])
-        .rpc();
+        await program.methods.prohibitedApproveAccount(new anchor.BN(1000))
+            .accounts({
+                authority: payer.publicKey,
+                tokenAccount: userTokenAccount.publicKey,
+                delegate: maliciousAccount.publicKey,
+                tokenProgram: TOKEN_2022_PROGRAM_ID,
+            })
+            .signers([payer])
+            .rpc();
     })
 })

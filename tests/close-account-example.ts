@@ -1,9 +1,9 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { SolanaLabCpiGuard } from "../target/types/solana_lab_cpi_guard";
-import { PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from '@solana/web3.js'
-import { mintTo, createAccount, createMint, getAssociatedTokenAddress, createAssociatedTokenAccount, getAccount, TOKEN_2022_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from '@solana/spl-token'
-import { createTokenAccount, createTokenAccountWithExtensions } from "./utils/token-helper";
+import { PublicKey } from '@solana/web3.js'
+import { disableCpiGuard, createMint, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token'
+import { createTokenAccountWithExtensions } from "./utils/token-helper";
 import { safeAirdrop, delay } from "./utils/utils";
 import { assert } from "chai"
 
@@ -44,49 +44,36 @@ describe("close-account-test", () => {
         )
         
         try {
-        const tx = await program.methods.maliciousCloseAccount()
-        .accounts({
-            authority: payer.publicKey,
-            tokenAccount: userTokenAccount.publicKey,
-            destination: maliciousAccount.publicKey,
-            tokenProgram: TOKEN_2022_PROGRAM_ID,
-        })
-        .signers([payer])
-        .rpc();
-
-        console.log("Your transaction signature", tx);
+        await program.methods.maliciousCloseAccount()
+            .accounts({
+                authority: payer.publicKey,
+                tokenAccount: userTokenAccount.publicKey,
+                destination: maliciousAccount.publicKey,
+                tokenProgram: TOKEN_2022_PROGRAM_ID,
+            })
+            .signers([payer])
+            .rpc();
         } catch (e) {
         assert(e.message == "failed to send transaction: Transaction simulation failed: Error processing Instruction 0: custom program error: 0x2c")
         console.log("CPI Guard is enabled, and a program attempted to close an account without returning lamports to owner");
         }
     });
 
-    it("Close Account without CPI Guard", async () => {
-        let nonCpiGuardTokenAccount = anchor.web3.Keypair.generate()
-        
-        testTokenMint = await createMint(
+    it("Close Account without CPI Guard", async () => {        
+        await disableCpiGuard(
             provider.connection,
             payer,
-            provider.wallet.publicKey,
-            undefined,
-            6,
-            undefined,
+            userTokenAccount.publicKey,
+            payer,
+            [],
             undefined,
             TOKEN_2022_PROGRAM_ID
         )
         
-        await createTokenAccount(
-            provider.connection,
-            testTokenMint,
-            payer,
-            payer,
-            nonCpiGuardTokenAccount
-        )
-        
-        const tx = await program.methods.maliciousCloseAccount()
+        await program.methods.maliciousCloseAccount()
             .accounts({
             authority: payer.publicKey,
-            tokenAccount: nonCpiGuardTokenAccount.publicKey,
+            tokenAccount: userTokenAccount.publicKey,
             destination: maliciousAccount.publicKey,
             tokenProgram: TOKEN_2022_PROGRAM_ID,
             })

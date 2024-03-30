@@ -2,7 +2,7 @@ import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { SolanaLabCpiGuard } from "../target/types/solana_lab_cpi_guard";
 import { PublicKey } from '@solana/web3.js'
-import { mintTo, createMint, approve, getAssociatedTokenAddress, createAssociatedTokenAccount, getAccount, TOKEN_2022_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from '@solana/spl-token'
+import { mintTo, createMint, approve, disableCpiGuard, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token'
 import { createTokenAccount, createTokenAccountWithExtensions } from "./utils/token-helper";
 import { safeAirdrop, delay } from "./utils/utils";
 import { assert } from "chai"
@@ -43,7 +43,7 @@ describe("burn-delegate-test", () => {
             userTokenAccount
         )
 
-        const mintToTx = await mintTo(
+        await mintTo(
             provider.connection,
             payer,
             testTokenMint,
@@ -55,7 +55,7 @@ describe("burn-delegate-test", () => {
             TOKEN_2022_PROGRAM_ID
         )
 
-        const approveTx = await approve(
+        await approve(
             provider.connection,
             payer,
             userTokenAccount.publicKey,
@@ -68,18 +68,16 @@ describe("burn-delegate-test", () => {
         )
 
         try {
-            const tx = await program.methods.unauthorizedBurn(new anchor.BN(500))
-            .accounts({
-                // payer is not the delegate
-                authority: payer.publicKey,
-                tokenAccount: userTokenAccount.publicKey,
-                tokenMint: testTokenMint,
-                tokenProgram: TOKEN_2022_PROGRAM_ID,
-            })
-            .signers([payer])
-            .rpc();
-
-            console.log("Your transaction signature", tx);
+            await program.methods.unauthorizedBurn(new anchor.BN(500))
+                .accounts({
+                    // payer is not the delegate
+                    authority: payer.publicKey,
+                    tokenAccount: userTokenAccount.publicKey,
+                    tokenMint: testTokenMint,
+                    tokenProgram: TOKEN_2022_PROGRAM_ID,
+                })
+                .signers([payer])
+                .rpc();
         } catch (e) {
             assert(e.message == "failed to send transaction: Transaction simulation failed: Error processing Instruction 0: custom program error: 0x2b")
             console.log("CPI Guard is enabled, and a program attempted to burn user funds without using a delegate.");
@@ -87,36 +85,12 @@ describe("burn-delegate-test", () => {
     })
 
     it("Burn without Delegate Signature Example", async () => {
-        let nonCpiGuardTokenAccount = anchor.web3.Keypair.generate()
-        await createTokenAccount(
-            provider.connection,
-            testTokenMint,
-            payer,
-            payer,
-            nonCpiGuardTokenAccount
-        )
-
-        await mintTo(
+        await disableCpiGuard(
             provider.connection,
             payer,
-            testTokenMint,
-            nonCpiGuardTokenAccount.publicKey,
+            userTokenAccount.publicKey,
             payer,
-            1000,
-            undefined,
-            undefined,
-            TOKEN_2022_PROGRAM_ID
-        )
-
-
-        await approve(
-            provider.connection,
-            payer,
-            nonCpiGuardTokenAccount.publicKey,
-            delegate.publicKey,
-            payer,
-            500,
-            undefined,
+            [],
             undefined,
             TOKEN_2022_PROGRAM_ID
         )
@@ -125,7 +99,7 @@ describe("burn-delegate-test", () => {
             .accounts({
                 // payer is not the delegate
                 authority: payer.publicKey,
-                tokenAccount: nonCpiGuardTokenAccount.publicKey,
+                tokenAccount: userTokenAccount.publicKey,
                 tokenMint: testTokenMint,
                 tokenProgram: TOKEN_2022_PROGRAM_ID,
             })
