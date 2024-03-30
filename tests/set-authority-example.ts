@@ -14,70 +14,7 @@ describe("approve-delegate-test", () => {
     const program = anchor.workspace.SolanaLabCpiGuard as Program<SolanaLabCpiGuard>;
     const provider = anchor.AnchorProvider.env();
 
-    // test accounts
-    const payer = anchor.web3.Keypair.generate()
-    let testTokenMint: PublicKey = null
-    let userTokenAccount = anchor.web3.Keypair.generate()
-    let maliciousAccount = anchor.web3.Keypair.generate()
+    it("[CPI Guard] Set Authority Example", async () => {})
 
-    it("[CPI Guard] Set Authority Example", async () => {
-        await safeAirdrop(payer.publicKey, provider.connection)
-        await safeAirdrop(provider.wallet.publicKey, provider.connection)
-        delay(10000)
-
-        testTokenMint = await createMint(
-            provider.connection,
-            payer,
-            provider.wallet.publicKey,
-            undefined,
-            6,
-            undefined,
-            undefined,
-            TOKEN_2022_PROGRAM_ID
-        )
-        await createTokenAccountWithExtensions(
-            provider.connection,
-            testTokenMint,
-            payer,
-            payer,
-            userTokenAccount
-        )
-
-        try {
-            const tx = await program.methods.prohibtedSetAuthority()
-            .accounts({
-                authority: payer.publicKey,
-                tokenAccount: userTokenAccount.publicKey,
-                newAuthority: maliciousAccount.publicKey,
-                tokenProgram: TOKEN_2022_PROGRAM_ID,
-            })
-            .signers([payer])
-            .rpc();
-
-        console.log("Your transaction signature", tx);
-        } catch (e) {
-            assert(e.message == "failed to send transaction: Transaction simulation failed: Error processing Instruction 0: custom program error: 0x2e")
-            console.log("CPI Guard is enabled, and a program attempted to add or change an authority");
-        }
-    })
-
-    it("Set Authority Example", async () => {
-        let nonCpiGuardTokenAccount = anchor.web3.Keypair.generate()
-        await createTokenAccount(
-            provider.connection,
-            testTokenMint,
-            payer,
-            payer,
-            nonCpiGuardTokenAccount
-        )
-        const tx = await program.methods.prohibtedSetAuthority()
-        .accounts({
-            authority: payer.publicKey,
-            tokenAccount: nonCpiGuardTokenAccount.publicKey,
-            newAuthority: maliciousAccount.publicKey,
-            tokenProgram: TOKEN_2022_PROGRAM_ID,
-        })
-        .signers([payer])
-        .rpc();
-    })
+    it("Set Authority Example", async () => {})
 })
