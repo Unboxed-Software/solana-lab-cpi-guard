@@ -1,9 +1,9 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { SolanaLabCpiGuard } from "../target/types/solana_lab_cpi_guard";
-import { PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from '@solana/web3.js'
-import { mintTo, createAccount, createMint, getAssociatedTokenAddress, createAssociatedTokenAccount, getAccount, TOKEN_2022_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID } from '@solana/spl-token'
-import { createTokenAccount, createTokenAccountWithExtensions } from "./utils/token-helper";
+import { PublicKey } from '@solana/web3.js'
+import { disableCpiGuard, createMint, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token'
+import { createTokenAccountWithExtensions } from "./utils/token-helper";
 import { safeAirdrop, delay } from "./utils/utils";
 import { assert } from "chai"
 
