@@ -17,7 +17,7 @@ describe("burn-delegate-test", () => {
     anchor.setProvider(provider);
 
     // test accounts
-    const [testTokenMint, userTokenAccount, maliciousAccount] = makeKeypairs(3);
+    const [testTokenMint, userTokenAccount, delegate] = makeKeypairs(3);
 
     before(async () => {
         await airdropIfRequired(connection, payer.publicKey, LAMPORTS_PER_SOL * 2, LAMPORTS_PER_SOL);
