@@ -5,7 +5,7 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-solana_lab_cpi_guard = "<YOUR-PROGRAM-ID-HERE>"
+solana_lab_cpi_guard = "DAdVwTVzEuJMt1cNnN8K3QPVVZX9mLLDDGh2xsZxtaXm"
 
 [registry]
 url = "https://api.apr.dev"

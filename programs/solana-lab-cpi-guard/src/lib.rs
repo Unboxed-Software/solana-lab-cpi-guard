@@ -12,7 +12,7 @@ use {
     spl_token_2022,
 };
 
-declare_id!("<YOUR-PROGRAM-ID-HERE>");
+declare_id!("DAdVwTVzEuJMt1cNnN8K3QPVVZX9mLLDDGh2xsZxtaXm");
 
 #[program]
 pub mod solana_lab_cpi_guard {
