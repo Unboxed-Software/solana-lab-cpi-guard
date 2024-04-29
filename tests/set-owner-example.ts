@@ -3,8 +3,7 @@ import { Program } from "@coral-xyz/anchor";
 import { SolanaLabCpiGuard } from "../target/types/solana_lab_cpi_guard";
 import { PublicKey } from '@solana/web3.js'
 import { setAuthority, AuthorityType, createMint, TOKEN_2022_PROGRAM_ID } from '@solana/spl-token'
-import { createTokenAccount, createTokenAccountWithExtensions } from "./utils/token-helper";
-import { safeAirdrop, delay } from "./utils/utils";
+// import { createTokenAccountWithCPIGuard } from "./token-helper"; // We'll import this later
 import { assert } from "chai"
 
 describe("set-owner-test", () => {
