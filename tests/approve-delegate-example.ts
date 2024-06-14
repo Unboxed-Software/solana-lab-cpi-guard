@@ -20,7 +20,7 @@ describe("approve-delegate-test", () => {
     let userTokenAccount = anchor.web3.Keypair.generate()
     let maliciousAccount = anchor.web3.Keypair.generate()
 
-    it("[CPI Guard] Approve Delegate Example", async () => {
+    it("stops 'Approve Delegate' when CPI guard is enabled", async () => {
         await safeAirdrop(payer.publicKey, provider.connection)
         await safeAirdrop(provider.wallet.publicKey, provider.connection)
         delay(10000)
@@ -58,7 +58,7 @@ describe("approve-delegate-test", () => {
         }
     })
 
-    it("Approve Delegate Example", async () => {
+    it("allows 'Approve Delegate' when CPI guard is disabled", async () => {
         await disableCpiGuard(
             provider.connection,
             payer,
