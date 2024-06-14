@@ -26,7 +26,7 @@ const createTokenAccountInstruction = SystemProgram.createAccount({
     programId: TOKEN_2022_PROGRAM_ID,
 });
 
-const initializeCpiGuard =
+const enableCpiGuardInstruction =
     createEnableCpiGuardInstruction(tokenAccount, owner.publicKey, [], TOKEN_2022_PROGRAM_ID)
 
 const initializeAccountInstruction = createInitializeAccountInstruction(
@@ -39,7 +39,7 @@ const initializeAccountInstruction = createInitializeAccountInstruction(
 const transaction = new Transaction().add(
     createTokenAccountInstruction,
     initializeAccountInstruction,  
-    initializeCpiGuard,
+    enableCpiGuardInstruction,
 );
 
 transaction.feePayer = payer.publicKey;
